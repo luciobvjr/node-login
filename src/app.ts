@@ -1,6 +1,7 @@
 import express from 'express';
 import databaseConnect from './databaseConnect';
-import User from './models/User';
+import User from './models/user';
+import bcrypt from 'bcrypt';
 
 const app = express();
 
@@ -26,15 +27,23 @@ app.post('/auth/signup', async (req, res) => {
     return res.status(400).json({ message: 'User already exists' });
   }
 
+  // Hash Password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
   const user = new User({
     name,
     email,
-    password
+    password: hashedPassword
   });
 
-  user.save().then(() => {
+  try {
+    await user.save();
     res.status(201).json({ message: 'User created successfully' });
-  })
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Error creating user, try again later' });
+  }
 })
 
 // Connect to Database
