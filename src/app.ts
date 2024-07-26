@@ -1,9 +1,11 @@
 import { Server } from './common/server';
 import { authRouter } from './routers/auth.router';
+import { privateRouter } from './routers/private.router';
 
 const server = new Server();
 const routers = [
-  authRouter
+  authRouter,
+  privateRouter
 ];
 
 server.bootstrap(routers)
