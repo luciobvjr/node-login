@@ -24,7 +24,7 @@ export class Server {
                 this.app.use(bodyParser.urlencoded({ extended: true }))
 
                 // Apply Routers
-                for(const router of routers) {
+                for (const router of routers) {
                     router.applyRoutes(this.app);
                 }
 
@@ -43,9 +43,9 @@ export class Server {
         const uri = `mongodb+srv://${dbUser}:${dbPass}@cluster0.lw7gjyi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
         (<any>mongoose).Promise = global.Promise;
-        return mongoose.connect(uri).then((db) => { 
+        return mongoose.connect(uri).then((db) => {
             console.log('Connected to MongoDB');
         })
-        .catch(err => console.error('Error connecting to MongoDB:', err));
+            .catch(err => console.error('Error connecting to MongoDB:', err));
     }
 }
