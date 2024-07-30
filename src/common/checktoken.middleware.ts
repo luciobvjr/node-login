@@ -10,11 +10,11 @@ export const checkToken = async (req: Request, res: Response, next: NextFunction
     }
 
     try {
-        const apiSecret = process.env.API_SECRET;
-        if (!apiSecret) {
-            throw new Error('API_SECRET is not defined');
+        const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+        if (!accessTokenSecret) {
+            throw new Error('Access token secret not found');
         }
-        const object = jwt.verify(token, apiSecret);
+        const object = jwt.verify(token, accessTokenSecret);
         req.body.object = object;
         next();
     } catch (error) {

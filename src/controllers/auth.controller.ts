@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/user";
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import authService from "../services/auth.service";
 
 class AuthController {
@@ -43,15 +42,58 @@ class AuthController {
         }
 
         try {
-            const token = await authService.generateToken(user._id);
+            const token = await authService.generateAccessToken(user._id);
+            const refreshToken = await authService.generateRefreshToken(user._id);
+
+            user.refreshToken = refreshToken;
+            await user.save();
+
             return res.status(200).json({
-                message: 'Authentication successful',
-                user: user.name,
-                token: token
+                token: token,
+                refreshToken: refreshToken
             });
         } catch (error) {
             console.log(error);
             return res.status(500).json({ message: 'Error logging in, try again later' });
+        }
+    }
+
+    async refreshToken(req: Request, res: Response, next: NextFunction) {
+        const authHeader = req.headers['authorization'];
+        const refreshToken = authHeader && authHeader.split(' ')[1];
+
+        if (!refreshToken) {
+            return res.status(400).json({ message: 'Refresh token is required' });
+        }
+
+        const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+        if (!refreshTokenSecret) {
+            return res.status(500).json({ message: 'Refresh token secret not found' });
+        }
+
+        try {
+            const object = jwt.verify(refreshToken, refreshTokenSecret) as JwtPayload;
+            const user = await User.findById(object.id);
+
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            if (user.refreshToken !== refreshToken) {
+                throw new Error('Invalid refresh token'); 
+            }
+
+            const token = await authService.generateAccessToken(user._id);
+            const newRefreshToken = await authService.generateRefreshToken(user._id);
+            user.refreshToken = newRefreshToken;
+            await user.save();
+
+            return res.status(200).json({
+                token: token,
+                refreshToken: newRefreshToken
+            });
+        } catch (error) {
+            return res.status(403).json({ message: 'Invalid refresh token' });
         }
     }
 }
