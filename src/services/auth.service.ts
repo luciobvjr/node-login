@@ -35,7 +35,7 @@ class AuthService {
     async generateAccessToken(userID: Types.ObjectId) {
         const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
         if (accessTokenSecret) {
-            const token = jwt.sign({ id: userID }, accessTokenSecret, { expiresIn: '15s' });
+            const token = jwt.sign({ id: userID }, accessTokenSecret, { expiresIn: '30m' });
             return token;
         }
         throw new Error('Access token secret not found');
@@ -44,7 +44,7 @@ class AuthService {
     async generateRefreshToken(userID: Types.ObjectId) {
         const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
         if (refreshTokenSecret) {
-            const token = jwt.sign({ id: userID }, refreshTokenSecret, { expiresIn: '1m' });
+            const token = jwt.sign({ id: userID }, refreshTokenSecret, { expiresIn: '7d' });
             return token;
         }
         throw new Error('Refresh token secret not found');

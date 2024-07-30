@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/user";
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import authService from "../services/auth.service";
 
 class AuthController {
@@ -69,25 +68,33 @@ class AuthController {
 
         const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
         if (!refreshTokenSecret) {
-            throw new Error('Access token secret not found');
-        }
-        const object = jwt.verify(refreshToken, refreshTokenSecret);
-
-        if (!object) {
-            return res.status(400).json({ message: 'Invalid refresh token' });
+            return res.status(500).json({ message: 'Refresh token secret not found' });
         }
 
-        const user = await User.findById(object.id);
+        try {
+            const object = jwt.verify(refreshToken, refreshTokenSecret) as JwtPayload;
+            const user = await User.findById(object.id);
 
-        if (!user) {
-            return res.status(400).json({ message: 'User not found' });
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            if (user.refreshToken !== refreshToken) {
+                throw new Error('Invalid refresh token'); 
+            }
+
+            const token = await authService.generateAccessToken(user._id);
+            const newRefreshToken = await authService.generateRefreshToken(user._id);
+            user.refreshToken = newRefreshToken;
+            await user.save();
+
+            return res.status(200).json({
+                token: token,
+                refreshToken: newRefreshToken
+            });
+        } catch (error) {
+            return res.status(403).json({ message: 'Invalid refresh token' });
         }
-
-        const token = await authService.generateAccessToken(user._id);
-
-        return res.status(200).json({
-            token: token
-        });
     }
 }
 
