@@ -32,13 +32,22 @@ class AuthService {
         return user;
     }
 
-    async generateToken(userID: Types.ObjectId) {
-        const apiSecret = process.env.API_SECRET;
-        if (apiSecret) {
-            const token = jwt.sign({ id: userID }, apiSecret);
+    async generateAccessToken(userID: Types.ObjectId) {
+        const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+        if (accessTokenSecret) {
+            const token = jwt.sign({ id: userID }, accessTokenSecret, { expiresIn: '15s' });
             return token;
         }
-        throw new Error('API secret not found');
+        throw new Error('Access token secret not found');
+    }
+
+    async generateRefreshToken(userID: Types.ObjectId) {
+        const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+        if (refreshTokenSecret) {
+            const token = jwt.sign({ id: userID }, refreshTokenSecret, { expiresIn: '1m' });
+            return token;
+        }
+        throw new Error('Refresh token secret not found');
     }
 }
 

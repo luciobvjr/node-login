@@ -43,16 +43,51 @@ class AuthController {
         }
 
         try {
-            const token = await authService.generateToken(user._id);
+            const token = await authService.generateAccessToken(user._id);
+            const refreshToken = await authService.generateRefreshToken(user._id);
+
+            user.refreshToken = refreshToken;
+            await user.save();
+
             return res.status(200).json({
-                message: 'Authentication successful',
-                user: user.name,
-                token: token
+                token: token,
+                refreshToken: refreshToken
             });
         } catch (error) {
             console.log(error);
             return res.status(500).json({ message: 'Error logging in, try again later' });
         }
+    }
+
+    async refreshToken(req: Request, res: Response, next: NextFunction) {
+        const authHeader = req.headers['authorization'];
+        const refreshToken = authHeader && authHeader.split(' ')[1];
+
+        if (!refreshToken) {
+            return res.status(400).json({ message: 'Refresh token is required' });
+        }
+
+        const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+        if (!refreshTokenSecret) {
+            throw new Error('Access token secret not found');
+        }
+        const object = jwt.verify(refreshToken, refreshTokenSecret);
+
+        if (!object) {
+            return res.status(400).json({ message: 'Invalid refresh token' });
+        }
+
+        const user = await User.findById(object.id);
+
+        if (!user) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        const token = await authService.generateAccessToken(user._id);
+
+        return res.status(200).json({
+            token: token
+        });
     }
 }
 

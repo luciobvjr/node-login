@@ -6,6 +6,7 @@ class AuthRouter extends Router {
     applyRoutes(app: Express) {
         app.post('/auth/signup', authController.createUser);
         app.post('/auth/login', authController.authenticateUser);
+        app.get('/auth/refresh-token', authController.refreshToken);
     }
 }
 
